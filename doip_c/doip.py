@@ -1,6 +1,6 @@
 import pandas as pd
 
-# 送信コマンドテーブル
+# 送信コマンドテーブル (Transmit command table)
 doip_cmd_tbl_send = \
 [   #"cmand"                                            ,"protocol","KEY"                   ,"CMN" ,"TYPE","LEN"     ,"VALUE1"         ,"VALUE2"   ,"VALUE3"
     ["Vehicle identification request message"           ,"UDP"     ,"-CMD_UDP_VI_REQ-"      ,"02FD","0001","00000000",None             ,None       ,None           ],
@@ -16,7 +16,7 @@ doip_cmd_tbl_send = \
     #["Diagnostic message positive acknowledgement"      ,"-CMD_TCP_DMA-"         ,"02FD","8002","00000005","-TXT_SA2-"  ,"-TXT_TA-" ,None           ],
 ]
 
-# 受信コマンドテーブル
+# 受信コマンドテーブル (Receive command table)
 doip_cmd_tbl_recv = \
 [
     ["vehicle identification response message"          ,"UDP"     ,"-CMD_UDP_VI_RES-"      ,"02FD","0004","00000021"],
@@ -32,18 +32,18 @@ doip_send_df = pd.DataFrame((doip_cmd_tbl_send), columns=["cmand","protocol", "K
 doip_recv_df = pd.DataFrame((doip_cmd_tbl_recv), columns=["cmand","protocol", "KEY", "CMN", "TYPE","LEN"])
 
 
-# 送信データ作成関数
+# 送信データ作成関数 (Transmit data create function)
 def doip_make_msg(values,protocol):
     send_msg = None
     send_data = None
-    # 送信コマンドテーブル検索
+    # 送信コマンドテーブル検索 (Send command table search)
     for index, row in doip_send_df.iterrows():
-        # 送信データ種別を判定
+        # 送信データ種別を判定 (Determine sending data type)
         if values[row["KEY"]] == True and protocol == row["protocol"] :
             send_msg = row["cmand"]
             payload_data = ""
             payload_len =""
-            # ペイロード部分作成
+            # ペイロード部分作成 (Payload part creation)
             if row["cmand"] == "Routing activation request":
                 payload_data += values[row["VALUE1"]]
                 payload_data += "0000000000"
@@ -62,18 +62,18 @@ def doip_make_msg(values,protocol):
     return send_msg ,send_data
 
 
-# ACK送信データ作成関数
+# ACK送信データ作成関数 (ACK transmission data creation function)
 def doip_make_msg_ack(values):
     send_msg = "02FD800200000005" + values["-TXT_SA2-"] + "00"
     return send_msg
 
 
-# 受信データ判定関数
+# 受信データ判定関数 (Received data determination function)
 def doip_recv_msg(data,protocol):
     recv_msg = ""
     type = data[4:8]
     for index, row in doip_recv_df.iterrows():
-        # 受信データ種別を判定
+        # 受信データ種別を判定 (Determine received data type)
         if type == row["TYPE"] and protocol == row["protocol"] :
             recv_msg = row["cmand"]
     return recv_msg
