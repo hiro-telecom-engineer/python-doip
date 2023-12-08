@@ -1,11 +1,11 @@
 import pandas as pd
 import app
 
-# 初期設定
+# 初期設定 (Initial settings)
 g_values = ""
 g_sa = ""
 
-# 応答コマンドテーブル
+# 応答コマンドテーブル (Response command table)
 doip_cmd_tbl_send = \
 [   #"REQUEST"                                        ,"REQTYPE"    ,"RESPONCE"                                    ,"PROTCOL","CMN" ,"TYPE","LEN"     ,"VALUE1"     ,"VALUE2"      ,"VALUE3"        ,"VALUE4"
     ["Vehicle identification request message"         ,"0001"       ,"vehicle identification response message"    ,"UDP"     ,"02FD","0004","00000021","-VIN_GW-"   ,"-LOGI_ADDR-","-EID_GW-"       ,"-GID_GW-"  ],
@@ -21,20 +21,20 @@ doip_cmd_tbl_send = \
 doip_recv_df = pd.DataFrame((doip_cmd_tbl_send), columns=["REQ","REQTYPE","RES","PROTCOL","CMN","TYPE","LEN","VALUE1","VALUE2","VALUE3","VALUE4"])
 
 
-# 初期化関数
+# 初期化関数 (Init Function)
 def doip_init(values):
     global g_values
     g_values = values
     return
 
 
-# 送信データ作成関数
+# 送信データ作成関数 (Transmission Data Creation Function)
 def doip_make_msg(row,data):
     global g_sa
     send_data = None
     send_msg = row["RES"]
     payload_data = ""
-    # ペイロード部分作成
+    # ペイロード部分作成 (Payload Part Creation)
     if row["PROTCOL"] == "UDP":
         if row["VALUE1"] != None:
             payload_data += g_values[row["VALUE1"]]
@@ -55,23 +55,23 @@ def doip_make_msg(row,data):
         if row["RES"] == "Diagnostic message positive acknowledgement":
             if "" != g_sa:
                 payload_data += g_values[row["VALUE1"]] + g_sa + "00"
-    # ぺーロード長作成
+    # ぺーロード長作成 (Payload Length Creation)
     payload_len = hex(int(len(payload_data)/2))[2:]
     payload_len = payload_len.zfill(8)
-    # 送信データ作成
+    # 送信データ作成 (Create Sending Data)
     if None != payload_data:
         send_data = row["CMN"] + row["TYPE"] + payload_len + payload_data
     return send_msg ,send_data
 
 
-# 受信データ判定関数
+# 受信データ判定関数 (Received data determination function)
 def doip_recv_msg(data,protocol):
     recv_msg = ""
     send_msg = ""
     send_data = None
     type = data[4:8]
     for index, row in doip_recv_df.iterrows():
-        # 受信データ種別を判定
+        # 受信データ種別を判定 (Determine received data type)
         if type == row["REQTYPE"] and protocol == row["PROTCOL"] :
             recv_msg = row["REQ"]
             if row["REQ"] != "Diagnostic message positive acknowledgement":
@@ -79,7 +79,7 @@ def doip_recv_msg(data,protocol):
     return protocol,recv_msg,data,send_msg,send_data
 
 
-# ACK送信データ作成関数
+# ACK送信データ作成関数 (ACK transmission data creation function)
 def doip_make_msg_ack(values):
     send_msg = "02FD800200000005" + values["-TXT_SA2-"] + "00"
     return send_msg
