@@ -3,7 +3,7 @@ import PySimpleGUI as sg # ライブラリの読み込み (Load library)
 import threading
 import sys
 import socket
-from socket import socket, AF_INET, SOCK_DGRAM ,SOCK_STREAM
+from socket import socket, AF_INET, SOCK_DGRAM ,SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 import time
 import doip
 
@@ -66,7 +66,7 @@ def main():
 			doip.doip_init(values)
 			t1 = threading.Thread(target=udp_recv, args=(values['-IP_GW'] , int(values['-PORT_GW-']),))
 			threads.append(t1)
-			t1.setDaemon(True)
+			t1.daemon=True # fix warning: setDaemon() is deprecated
 			t1.start()
 			window["-COM_ST-"].Update("UDP OPEN")
 
@@ -75,7 +75,7 @@ def main():
 			doip.doip_init(values)
 			t2 = threading.Thread(target=tcp_recv, args=(values['-IP_GW'] , int(values['-PORT_GW-']),))
 			threads.append(t2)
-			t2.setDaemon(True)
+			t2.daemon=True
 			t2.start()
 			window["-COM_ST-"].Update("TCP OPEN")
 		elif event == None:
@@ -99,6 +99,7 @@ def udp_recv( ip_addr , port ):
 	BUFSIZE = 1024
 	# ソケット作成 (Create socket)
 	udpServSock = socket(AF_INET, SOCK_DGRAM)
+	udpServSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # Fix OSError: [WinError 10048]
 	# 受信側アドレスでソケットを設定
 	udpServSock.bind(SrcAddr)
 	time.sleep(1)
@@ -120,6 +121,7 @@ BUFFER_SIZE = 1024
 
 def tcp_recv( ip_addr , port ):
 	tcp_server = socket(AF_INET, SOCK_STREAM)
+	tcp_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 	tcp_server.bind(( ip_addr , port))
 	tcp_server.listen()
 	time.sleep(1)
